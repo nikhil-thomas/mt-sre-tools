@@ -1,6 +1,11 @@
 #!/usr/bin/env bash
 
-function podlogs() {
+function printUsage() {
+  echo usage:
+  echo ${0} '<deployment name> <namespace>'
+}
+
+function podLogs() {
   podName=$1
   namespace=$2
   containerNames=$(findContainerNames $podName $namespace)
@@ -29,5 +34,27 @@ function containerLog() {
  
 }
 
+function deploymentLogs() {
+  deploymentName=${1}
+  namespace=${2}
+  podNames=$(findPodNames ${deploymentName} ${namespace})
+  for podName in ${podNames}; do
+    podLogs ${podName} ${namespace}
+  done
+}
 
-podlogs $*
+function findPodNames() {
+  deploymentName=${1}
+  namespace=${2}
+  kubectl get pods -n ${namespace} | \
+    grep ${deploymentName} | \
+    awk '{print $1}'
+}
+
+if [[ $# -eq 0 ]]; then
+  echo invalid input
+  printUsage
+  exit 1
+fi
+
+deploymentLogs $*
